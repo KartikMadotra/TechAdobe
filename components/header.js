@@ -1,168 +1,169 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, Platform } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import * as Location from "expo-location";
-// import { ViewPager } from "@react-native-community/viewpager";
-// import PagerView from "react-native-pager-view";
 
-const Header = () => {
-  const [weather, setWeather] = useState({
-    temp: "24",
+const WeatherHeader = () => {
+  const [weatherData, setWeatherData] = useState({
+    temperature: "24",
     date: "25 Dec 2023",
-    description: "thunderstorm",
+    description: "Thunderstorm",
+    windSpeed: "5 m/s",
+    humidity: "75%",
+    icon: "https://cdn3d.iconscout.com/3d/premium/thumb/thunderstorm-rain-with-sun-6263759-5122295.png", // Default icon
   });
 
-  const API_KEY = "29147ff772779bd2b4ce89e97d80c3aa";
-
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          setErrorMsg("Permission to access location was denied");
-          return;
-        }
-
-        let location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
-
-        if (location) {
-          const weatherData = await getWeatherData(
-            location.coords.latitude,
-            location.coords.longitude
-          );
-          setWeather(weatherData);
-        }
-      } catch (error) {
-        console.error("Error fetching location or weather:", error);
-      }
-    };
-
-    if (Platform.OS === "android") {
-      setErrorMsg(
-        "Oops, this will not work on Snack in an Android Emulator. Try it on your device!"
-      );
-      return;
-    }
-
-    fetchData();
+    fetchWeatherData();
   }, []);
 
-  const getWeatherData = async (lat, lon) => {
+  const fetchWeatherData = async () => {
     try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      const API_KEY = "e10fc976aa128e69f22bc2b935eec3dc";
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&APPID=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`
       );
-      const json = await response.json();
+      const data = await response.json();
+      const { main, weather, wind, dt } = data;
+      const temperature = Math.round(Number(main.temp));
+      const humidity = main.humidity;
 
-      const { main, weather, dt } = json;
-      const temp = Math.round(Number(main.temp)); // Round temperature to the nearest integer
       const description = weather[0].description;
-
-      const date = new Date(dt * 1000);
-      const formattedDate = date.toDateString();
-
-      return {
-        temp,
+      const date = new Date(dt * 1000).toDateString();
+      const icon = getWeatherIcon(description);
+      const windSpeed = wind.speed + " m/s";
+      console.log(data);
+      setWeatherData({
+        temperature,
+        date,
         description,
-        date: formattedDate,
-      };
+        windSpeed,
+        humidity,
+        icon,
+      });
     } catch (error) {
-      throw new Error("Error fetching weather data:", error);
+      console.error("Error fetching location or weather:", error);
     }
   };
+  const getWeatherIcon = (description) => {
+    const weatherIcons = {
+      fog: "https://static.vecteezy.com/system/resources/previews/012/806/417/original/3d-cartoon-weather-fog-cloud-and-fog-sign-isolated-on-transparent-background-3d-render-illustration-png.png",
+      haze: "https://static.vecteezy.com/system/resources/previews/012/806/417/original/3d-cartoon-weather-fog-cloud-and-fog-sign-isolated-on-transparent-background-3d-render-illustration-png.png",
+      thunderstorm:
+        "https://cdn3d.iconscout.com/3d/premium/thumb/thunderstorm-rain-with-sun-6263759-5122295.png",
+      drizzle:
+        "https://cdn3d.iconscout.com/3d/premium/thumb/rainy-day-7096841-5753017.png",
+      rain: "https://img.freepik.com/premium-psd/3d-rain-with-sun-cloud-as-weather-icon_207199-301.jpg",
+      snow: "https://static.vecteezy.com/system/resources/previews/024/683/829/original/3d-icon-cloudy-snow-weather-forecast-illustration-concept-icon-render-free-png.png",
+      clear:
+        "https://p.turbosquid.com/ts-thumb/km/h3TiNP/rc/15/jpg/1679470218/600x600/fit_q87/e8e30a5c08bf4ed2b8adffd237e1b02ae98eb716/15.jpg",
+      clouds:
+        "https://cdn3d.iconscout.com/3d/premium/thumb/weather-6546350-5376613.png",
+      default:
+        "https://p.turbosquid.com/ts-thumb/km/h3TiNP/rc/15/jpg/1679470218/600x600/fit_q87/e8e30a5c08bf4ed2b8adffd237e1b02ae98eb716/15.jpg", // Default icon if description doesn't match
+    };
 
-  let img = {
-    uri: "https://static.vecteezy.com/system/resources/previews/012/177/446/original/weather-rain-weather-forecast-icon-meteorological-sign-3d-render-png.png",
-  }; // Default image
-
-  if (weather.description) {
-    const lowerCaseDescription = weather.description.toLowerCase();
-
-    if (lowerCaseDescription.includes("cloudy")) {
-      img = {
-        uri: "https://cdn3d.iconscout.com/3d/premium/thumb/cloudy-weather-3311758-2754892.png?f=webp",
-      };
-    } else if (
-      lowerCaseDescription.includes("fog") ||
-      lowerCaseDescription.includes("haze")
-    ) {
-      img = {
-        uri: "https://cdn3d.iconscout.com/3d/premium/thumb/foggy-weather-3311756-2754890.png?f=webp",
-      };
-    } else if (lowerCaseDescription.includes("rain")) {
-      img = {
-        uri: "https://static.vecteezy.com/system/resources/previews/012/177/446/original/weather-rain-weather-forecast-icon-meteorological-sign-3d-render-png.png",
-      };
-    } else if (lowerCaseDescription.includes("thunderstorm")) {
-      img = {
-        uri: "https://static.vecteezy.com/system/resources/previews/008/854/784/original/thunderstorm-rain-icon-weather-forecast-meteorological-sign-3d-render-png.png",
-      };
-    }
-  }
+    const lowerCaseDescription = description.toLowerCase();
+    return weatherIcons[lowerCaseDescription] || weatherIcons.default;
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>Ram Ram, Bhai</Text>
-      <Image source={img} style={styles.weatherIcon} />
-      <Text style={styles.date}>{weather.date}</Text>
-      <Text style={styles.description}>{weather.description}</Text>
-      <Text style={styles.temp}>{weather.temp}°</Text>
+      <View style={styles.jaiShriRamContainer}>
+        <Text style={styles.jaiShriRam}>Jai Shri Ram</Text>
+        <Image
+          source={{
+            uri: "https://i.postimg.cc/6qTYLN5g/pngtree-shri-ram-vector-design-image-for-cards-png-image-3942240-removebg-preview.png",
+          }}
+          style={styles.smallIcon}
+        />
+      </View>
+      <Image source={{ uri: weatherData.icon }} style={styles.weatherIcon} />
+      <View style={styles.textContainer}>
+        <Text style={styles.temperature}>{weatherData.temperature}°C</Text>
+        <Text style={styles.date}>{weatherData.date}</Text>
+        <Text style={styles.description}>{weatherData.description}</Text>
+        <Text style={styles.wind}>Wind: {weatherData.windSpeed}</Text>
+        <Text style={styles.humidity}>Humidity: {weatherData.humidity}</Text>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#7308ea",
-    borderRadius: 40,
-    padding: 8,
-    overflow: "hidden",
-    ...Platform.select({
-      web: {
-        width: "100%",
-        height: 210,
-        position: "relative",
-      },
-      android: {
-        width: "117%",
-        height: 160,
-        top: 38,
-        right: 26,
-      },
-    }),
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#3E4095",
+    borderRadius: 20,
+    padding: -180,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  jaiShriRam: {
+    fontSize: 28, // Increased font size
+    fontWeight: "bold",
+    color: "#FFA500", // Saffron color
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  jaiShriRamContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  smallIcon: {
+    width: 50, // Adjust the width as needed
+    height: 50, // Adjust the height as needed
+    marginLeft: 5, // Adjust the margin as needed
   },
   weatherIcon: {
-    height: Platform.select({ web: 210, android: 120 }),
-    width: Platform.select({ web: 210, android: 120 }),
-    right: Platform.select({ web: -15, android: 2 }),
-    // alignItems: "right",
+    width: 150, // Increased image size
+    height: 150, // Increased image size
+    borderRadius: 10,
+    marginVertical: 20,
   },
-  greeting: {
-    fontSize: 21,
-    color: "#fff",
-    right: -40,
+  textContainer: {
+    alignItems: "center",
   },
   date: {
-    fontSize: Platform.select({ web: 19, android: 14 }),
+    fontSize: 18, // Increased font size
     color: "#fff",
-    left: Platform.select({ web: 230, android: 125 }),
-    bottom: Platform.select({ web: 115, android: 85 }),
+    marginBottom: 8,
   },
   description: {
-    fontSize: 19,
+    fontSize: 22, // Increased font size
     color: "#fff",
-    left: Platform.select({ web: 230, android: 125 }),
-    bottom: Platform.select({ web: 105, android: 77 }),
+    fontWeight: "bold",
+    marginBottom: 8,
+    textAlign: "center",
   },
-  temp: {
-    fontSize: Platform.select({ web: 119, android: 73 }),
+  temperature: {
+    fontSize: 48, // Increased font size
     color: "#fff",
-    left: Platform.select({ web: 1220, android: 237 }),
-    bottom: Platform.select({ web: 245, android: 170 }),
+    fontWeight: "bold",
+  },
+  wind: {
+    fontSize: 18, // Increased font size
+    color: "#fff",
+    marginBottom: 8,
+  },
+  humidity: {
+    fontSize: 18, // Increased font size
+    color: "#fff",
   },
 });
 
-export default Header;
+export default WeatherHeader;
