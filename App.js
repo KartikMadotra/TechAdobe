@@ -3,14 +3,19 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import TabViewExample from "./components/tabview";
 import Header from "./components/header";
-
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 const App = () => {
   return (
-    <View style={styles.container}>
-      <Header />
-      <TabViewExample />
-      {/* <StatusBar style="light" /> */}
-    </View>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <View style={styles.container}>
+        <Header />
+        <TabViewExample />
+      </View>
+    </SafeAreaProvider>
   );
 };
 

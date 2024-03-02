@@ -13,6 +13,26 @@ import { ref, onValue, update } from "firebase/database";
 import * as Notifications from "expo-notifications";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  SafeAreaProvider,
+  initialWindowMetrics,
+} from "react-native-safe-area-context";
+
+const scaledFontSize = (baseSize) => {
+  const scaleFactor = 550; // Width of iPhone 6/7/8
+  const width = Dimensions.get("window").width;
+  const scale = width / scaleFactor;
+  const scaledSize = baseSize * scale;
+  return scaledSize;
+};
+
+const scaledImageSize = (baseSize) => {
+  const scaleFactor = 550; // Width of iPhone 6/7/8
+  const width = Dimensions.get("window").width;
+  const scale = width / scaleFactor;
+  const scaledSize = baseSize * scale;
+  return scaledSize;
+};
 
 const Alert = ({ message, title, onPress }) => {
   return (
@@ -33,7 +53,6 @@ const Alert = ({ message, title, onPress }) => {
     </View>
   );
 };
-
 const TabViewExample = () => {
   const [index, setIndex] = useState(0);
   const [switchStates, setSwitchStates] = useState({
@@ -49,10 +68,10 @@ const TabViewExample = () => {
     out: false,
     maingate: false,
     gate: false,
-    HumidityVal: 23,
-    temperature: 13,
-    type: "Gas",
-    alert: true,
+    HumidityVal: false,
+    temperature: false,
+    type: false,
+    alert: false,
   });
 
   useEffect(() => {
@@ -61,27 +80,25 @@ const TabViewExample = () => {
     // Fetch the initial values from Firebase for all switches
     onValue(switchesRef, (snapshot) => {
       const data = snapshot.val();
-      // console.log(data);
+      console.log(data);
       if (data !== null && data !== undefined) {
         setSwitchStates({
-          drawingone: data.drawingone,
-          drawingtwo: data.drawingtwo,
-          drawingfan: data.drawingfan,
-          bedrooomone: data.bedroomone,
-          bedroomtwo: data.bedroomtwo,
-          bedroomfan: data.bedroomfan,
-          parking: data.parking,
-          pump: data.pump,
-          laser: data.laser,
-          out: data.out,
-          maingate: data.maingate,
-          gate: data.gate,
+          drawingone: data.drawingone === "on",
+          drawingtwo: data.drawingtwo === "on",
+          drawingfan: data.drawingfan === "on",
+          bedroomone: data.bedroomone === "on", // Fix typo here
+          bedroomtwo: data.bedroomtwo === "on",
+          bedroomfan: data.bedroomfan === "on",
+          parking: data.parking === "on",
+          pump: data.pump === "on",
+          laser: data.laser === "on",
+          out: data.out === "on",
+          maingate: data.maingate === "on",
+          gate: data.gate === "on",
           HumidityVal: parseFloat(data.Humidity),
           temperature: parseFloat(data.temp),
           soilMoisture: parseFloat(data.soilMoisture),
-          type: String(data.type),
-          // alert: data.Alert === true,
-          // type: "Gas", // Set type as a string
+          type: String(data.type) === "Gas",
           alert: data.Alert === true,
         });
         // setty=data.type;
@@ -91,12 +108,15 @@ const TabViewExample = () => {
 
   const handleSwitchToggle = (key) => {
     const switchesRef = ref(db);
-    update(switchesRef, { [key]: switchStates[key] ? "off" : "on" });
+    update(switchesRef, { [key]: !switchStates[key] ? "on" : "off" });
 
-    setSwitchStates((prevSwitchStates) => ({
-      ...prevSwitchStates,
-      [key]: !prevSwitchStates[key],
-    }));
+    setSwitchStates((prevSwitchStates) => {
+      // Use a callback function to ensure the correct order of state updates
+      return {
+        ...prevSwitchStates,
+        [key]: !prevSwitchStates[key],
+      };
+    });
   };
 
   // Notification handler
@@ -213,9 +233,9 @@ const TabViewExample = () => {
         </View>
 
         {/* Adjusted style for the View wrapping the LightSection for pump */}
-        {/* <View style={{ ...styles.lightContainer, marginTop: -80 }}>
+        <View style={{ ...styles.lightContainer, marginTop: -80 }}>
           <LightSection label="Garden Pump" switchKey="pump" />
-        </View> */}
+        </View>
       </View>
     );
   };
@@ -252,23 +272,25 @@ const TabViewExample = () => {
   ];
 
   return (
-    <TabView
-      navigationState={{ index, routes }}
-      renderScene={renderScene}
-      onIndexChange={setIndex}
-      initialLayout={{ width: Dimensions.get("window").width }}
-      style={styles.tabView}
-      sceneContainerStyle={styles.screenContainer}
-      renderTabBar={(props) => (
-        <TabBar
-          {...props}
-          indicatorStyle={styles.scrollIndicator}
-          style={styles.tabBar}
-          activeColor="#fff"
-          inactiveColor="#c0c0c0"
-        />
-      )}
-    />
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: Dimensions.get("window").width }}
+        style={styles.tabView}
+        sceneContainerStyle={styles.screenContainer}
+        renderTabBar={(props) => (
+          <TabBar
+            {...props}
+            indicatorStyle={styles.scrollIndicator}
+            style={styles.tabBar}
+            activeColor="#fff"
+            inactiveColor="#c0c0c0"
+          />
+        )}
+      />
+    </SafeAreaProvider>
   );
 };
 
@@ -278,6 +300,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#0d1344",
     paddingHorizontal: 16,
     paddingTop: 16,
+  },
+  label: {
+    fontSize: scaledFontSize(18), // Adjusted font size
+    color: "#ffffff",
+  },
+  switch: {
+    height: scaledImageSize(20), // Adjusted switch height
+    width: scaledImageSize(40), // Adjusted switch width
+    borderRadius: scaledImageSize(20),
+    transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }],
+  },
+  bigText: {
+    color: "#ffffff",
+    fontSize: scaledFontSize(32), // Adjusted font size
+    marginBottom: scaledImageSize(10), // Adjusted margin
+  },
+  smallText: {
+    color: "#ffffff",
+    fontSize: scaledFontSize(18), // Adjusted font size
   },
   alertContainer: {
     padding: 10,
