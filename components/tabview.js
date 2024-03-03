@@ -19,7 +19,7 @@ import {
 } from "react-native-safe-area-context";
 
 const scaledFontSize = (baseSize) => {
-  const scaleFactor = 550; // Width of iPhone 6/7/8
+  const scaleFactor = 1600; // Width of iPhone 6/7/8
   const width = Dimensions.get("window").width;
   const scale = width / scaleFactor;
   const scaledSize = baseSize * scale;
@@ -27,7 +27,7 @@ const scaledFontSize = (baseSize) => {
 };
 
 const scaledImageSize = (baseSize) => {
-  const scaleFactor = 550; // Width of iPhone 6/7/8
+  const scaleFactor = 1600; // Width of iPhone 6/7/8
   const width = Dimensions.get("window").width;
   const scale = width / scaleFactor;
   const scaledSize = baseSize * scale;
