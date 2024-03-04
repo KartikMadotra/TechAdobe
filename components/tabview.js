@@ -104,7 +104,7 @@ const TabViewExample = () => {
           drawingone: data.drawingone === "on",
           drawingtwo: data.drawingtwo === "on",
           drawingfan: data.drawingfan === "on",
-          bedrooomone: data.bedroomone === "on",
+          bedroomone: data.bedroomone === "on",
           bedroomtwo: data.bedroomtwo === "on",
           bedroomfan: data.bedroomfan === "on",
           parking: data.parking === "on",
